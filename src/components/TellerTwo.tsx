@@ -40,6 +40,8 @@ const TellerTwo = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newDbName, setNewDbName] = useState("");
   const [newDbType, setNewDbType] = useState<"personal" | "public">("personal");
+  const [editingFieldIndex, setEditingFieldIndex] = useState<number | null>(null);
+  const [editingFieldName, setEditingFieldName] = useState("");
 
   const activeDb = databases.find((d) => d.id === selectedDb);
 
@@ -66,6 +68,27 @@ const TellerTwo = () => {
         ? { ...d, fields: [...d.fields, { name: `Field ${d.fields.length + 1}`, type: "text" }] }
         : d
     ));
+  };
+
+  const renameField = (fieldIndex: number, newName: string) => {
+    if (!activeDb || !newName.trim()) return;
+    const oldName = activeDb.fields[fieldIndex].name;
+    if (oldName === newName.trim()) { setEditingFieldIndex(null); return; }
+    setDatabases(databases.map((d) =>
+      d.id === activeDb.id
+        ? {
+            ...d,
+            fields: d.fields.map((f, i) => i === fieldIndex ? { ...f, name: newName.trim() } : f),
+            rows: d.rows.map((r) => {
+              const newRow = { ...r };
+              newRow[newName.trim()] = newRow[oldName];
+              delete newRow[oldName];
+              return newRow;
+            }),
+          }
+        : d
+    ));
+    setEditingFieldIndex(null);
   };
 
   const addRow = () => {
@@ -154,7 +177,27 @@ const TellerTwo = () => {
                       {activeDb.fields.map((f, i) => (
                         <th key={i} className="p-2 text-left border-b border-border/30 min-w-[140px]">
                           <div className="flex items-center gap-1.5">
-                            <span className="text-[11px] font-medium text-foreground">{f.name}</span>
+                            {editingFieldIndex === i ? (
+                              <input
+                                autoFocus
+                                value={editingFieldName}
+                                onChange={(e) => setEditingFieldName(e.target.value)}
+                                onBlur={() => renameField(i, editingFieldName)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") renameField(i, editingFieldName);
+                                  if (e.key === "Escape") setEditingFieldIndex(null);
+                                }}
+                                className="text-[11px] font-medium text-foreground bg-secondary/50 border border-primary/30 rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-primary/30 w-24"
+                              />
+                            ) : (
+                              <span
+                                className="text-[11px] font-medium text-foreground cursor-pointer hover:text-primary transition-colors"
+                                onDoubleClick={() => { setEditingFieldIndex(i); setEditingFieldName(f.name); }}
+                                title="Double-click to rename"
+                              >
+                                {f.name}
+                              </span>
+                            )}
                             <span className="text-[9px] text-muted-foreground bg-secondary/50 px-1.5 py-0.5 rounded">{f.type}</span>
                           </div>
                         </th>
