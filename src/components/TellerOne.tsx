@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Shield, Building2, User, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { Shield, Building2, User, Eye, EyeOff, ArrowRight, AlertTriangle } from "lucide-react";
 import variesLogo from "@/assets/varies-logo.png";
+import { registerUser, validateLogin } from "@/lib/backStructure";
 
 interface TellerOneProps {
   onLogin: (username: string) => void;
@@ -27,10 +28,24 @@ const TellerOne = ({ onLogin, onRegister }: TellerOneProps) => {
   };
 
   const [generatedKey, setGeneratedKey] = useState<string | null>(null);
+  const [alertMsg, setAlertMsg] = useState<string | null>(null);
 
   const handleRegister = () => {
     const key = generateVaultKey();
-    setGeneratedKey(key);
+    const result = registerUser({
+      username: regUser,
+      vaultKey: key,
+      email: regEmail,
+      institution: isInstitution ? regInstitution : undefined,
+      recoveryPin: regRecoveryPin,
+      createdAt: new Date().toISOString(),
+    });
+    if (result.success) {
+      setGeneratedKey(key);
+      setAlertMsg(null);
+    } else {
+      setAlertMsg(result.error || "Registration failed.");
+    }
   };
 
   const handleConfirmRegister = () => {
@@ -38,7 +53,13 @@ const TellerOne = ({ onLogin, onRegister }: TellerOneProps) => {
   };
 
   const handleLogin = () => {
-    onLogin(loginUser);
+    const result = validateLogin(loginUser, loginKey);
+    if (result.success) {
+      setAlertMsg(null);
+      onLogin(loginUser);
+    } else {
+      setAlertMsg(result.error || "Login failed.");
+    }
   };
 
   return (
@@ -55,12 +76,20 @@ const TellerOne = ({ onLogin, onRegister }: TellerOneProps) => {
           <p className="text-xs text-muted-foreground tracking-widest mt-1">AUTHENTICATION CORE</p>
         </div>
 
+        {/* Alert Message */}
+        {alertMsg && (
+          <div className="flex items-center gap-2 p-3 mb-4 rounded-lg border border-destructive/50 bg-destructive/10 text-destructive text-xs animate-fade-up">
+            <AlertTriangle className="w-4 h-4 shrink-0" />
+            <span>{alertMsg}</span>
+          </div>
+        )}
+
         {/* Mode toggle */}
         <div className="flex gap-1 p-1 bg-secondary/50 rounded-lg mb-6 animate-fade-up" style={{ animationDelay: "0.1s" }}>
           {(["login", "register"] as const).map((m) => (
             <button
               key={m}
-              onClick={() => { setMode(m); setGeneratedKey(null); setIsInstitution(null); }}
+              onClick={() => { setMode(m); setGeneratedKey(null); setIsInstitution(null); setAlertMsg(null); }}
               className={`flex-1 py-2 text-xs font-medium rounded-md transition-all duration-200
                 ${mode === m ? "bg-card text-primary win11-shadow" : "text-muted-foreground hover:text-foreground"}`}
             >
