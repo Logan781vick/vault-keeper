@@ -109,6 +109,41 @@ const TellerTwo = () => {
     ));
   };
 
+  const deleteField = (fieldIndex: number) => {
+    if (!activeDb || activeDb.fields.length <= 1) return;
+    const fieldName = activeDb.fields[fieldIndex].name;
+    setDatabases(databases.map((d) =>
+      d.id === activeDb.id
+        ? {
+            ...d,
+            fields: d.fields.filter((_, i) => i !== fieldIndex),
+            rows: d.rows.map((r) => {
+              const newRow = { ...r };
+              delete newRow[fieldName];
+              return newRow;
+            }),
+          }
+        : d
+    ));
+  };
+
+  const deleteRow = (rowIndex: number) => {
+    if (!activeDb) return;
+    setDatabases(databases.map((d) =>
+      d.id === activeDb.id
+        ? { ...d, rows: d.rows.filter((_, i) => i !== rowIndex) }
+        : d
+    ));
+  };
+
+  const deleteDatabase = (dbId: string) => {
+    const remaining = databases.filter((d) => d.id !== dbId);
+    setDatabases(remaining);
+    if (selectedDb === dbId) {
+      setSelectedDb(remaining.length > 0 ? remaining[0].id : "");
+    }
+  };
+
   return (
     <div className="flex h-full">
       {/* Database Strip Panel */}
@@ -128,7 +163,14 @@ const TellerTwo = () => {
             >
               <div className="flex items-center gap-2">
                 {db.type === "public" ? <Globe className="w-3 h-3 text-primary flex-shrink-0" /> : <Lock className="w-3 h-3 text-muted-foreground flex-shrink-0" />}
-                <span className="text-xs font-medium text-foreground truncate">{db.name}</span>
+                <span className="text-xs font-medium text-foreground truncate flex-1">{db.name}</span>
+                <button
+                  onClick={(e) => { e.stopPropagation(); deleteDatabase(db.id); }}
+                  className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-all"
+                  title="Delete database"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
               </div>
               <p className="text-[10px] text-muted-foreground mt-1 ml-5">{db.createdAt}</p>
             </button>
@@ -172,8 +214,9 @@ const TellerTwo = () => {
               <div className="min-w-full inline-block">
                 <table className="w-full border-collapse">
                   <thead>
-                    <tr>
-                      <th className="w-8 p-2 text-left text-[10px] text-muted-foreground border-b border-border/30">#</th>
+                     <tr>
+                       <th className="w-8 p-2 text-left text-[10px] text-muted-foreground border-b border-border/30">#</th>
+                       <th className="w-8 p-2 border-b border-border/30"></th>
                       {activeDb.fields.map((f, i) => (
                         <th key={i} className="p-2 text-left border-b border-border/30 min-w-[140px]">
                           <div className="flex items-center gap-1.5">
@@ -199,6 +242,15 @@ const TellerTwo = () => {
                               </span>
                             )}
                             <span className="text-[9px] text-muted-foreground bg-secondary/50 px-1.5 py-0.5 rounded">{f.type}</span>
+                            {activeDb.fields.length > 1 && (
+                              <button
+                                onClick={() => deleteField(i)}
+                                className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-all"
+                                title="Delete field"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            )}
                           </div>
                         </th>
                       ))}
@@ -206,8 +258,17 @@ const TellerTwo = () => {
                   </thead>
                   <tbody>
                     {activeDb.rows.map((row, ri) => (
-                      <tr key={ri} className="group hover:bg-secondary/20 transition-colors">
+                       <tr key={ri} className="group hover:bg-secondary/20 transition-colors">
                         <td className="p-2 text-[10px] text-muted-foreground border-b border-border/10">{ri + 1}</td>
+                        <td className="p-1 border-b border-border/10">
+                          <button
+                            onClick={() => deleteRow(ri)}
+                            className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-all"
+                            title="Delete row"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </td>
                         {activeDb.fields.map((f, fi) => (
                           <td key={fi} className="p-1 border-b border-border/10">
                             <input
@@ -222,7 +283,7 @@ const TellerTwo = () => {
                     ))}
                     {activeDb.rows.length === 0 && (
                       <tr>
-                        <td colSpan={activeDb.fields.length + 1} className="p-8 text-center text-xs text-muted-foreground">
+                        <td colSpan={activeDb.fields.length + 2} className="p-8 text-center text-xs text-muted-foreground">
                           No records yet. Click "+ Row" to add data.
                         </td>
                       </tr>
