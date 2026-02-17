@@ -7,10 +7,43 @@ import AppShell from "@/components/AppShell";
 
 type AppState = "splash" | "auth" | "app";
 
+export interface DatabaseEntry {
+  id: string;
+  name: string;
+  createdAt: string;
+  type: "personal" | "public";
+  fields: FieldDef[];
+  rows: Record<string, string>[];
+}
+
+export interface FieldDef {
+  name: string;
+  type: "text" | "number" | "date" | "boolean" | "email";
+}
+
+const DEFAULT_DB: DatabaseEntry = {
+  id: "1",
+  name: "Customer Records",
+  createdAt: new Date().toLocaleString(),
+  type: "personal",
+  fields: [
+    { name: "Name", type: "text" },
+    { name: "Email", type: "email" },
+    { name: "Revenue", type: "number" },
+  ],
+  rows: [
+    { Name: "John Doe", Email: "john@example.com", Revenue: "15000" },
+    { Name: "Jane Smith", Email: "jane@example.com", Revenue: "22000" },
+    { Name: "Bob Wilson", Email: "bob@example.com", Revenue: "8500" },
+  ],
+};
+
 const Index = () => {
   const [appState, setAppState] = useState<AppState>("splash");
   const [currentTeller, setCurrentTeller] = useState<"one" | "two" | "three">("two");
   const [username, setUsername] = useState("");
+  const [databases, setDatabases] = useState<DatabaseEntry[]>([DEFAULT_DB]);
+  const [selectedDbId, setSelectedDbId] = useState<string>("1");
 
   const handleSplashComplete = useCallback(() => {
     setAppState("auth");
@@ -33,6 +66,11 @@ const Index = () => {
     setUsername("");
   };
 
+  const handleViewInTellerThree = (dbId: string) => {
+    setSelectedDbId(dbId);
+    setCurrentTeller("three");
+  };
+
   if (appState === "splash") {
     return <SplashScreen onComplete={handleSplashComplete} />;
   }
@@ -53,8 +91,19 @@ const Index = () => {
           You are already authenticated.
         </div>
       )}
-      {currentTeller === "two" && <TellerTwo />}
-      {currentTeller === "three" && <TellerThree />}
+      {currentTeller === "two" && (
+        <TellerTwo
+          databases={databases}
+          setDatabases={setDatabases}
+          onViewInTellerThree={handleViewInTellerThree}
+        />
+      )}
+      {currentTeller === "three" && (
+        <TellerThree
+          databases={databases}
+          initialDbId={selectedDbId}
+        />
+      )}
     </AppShell>
   );
 };

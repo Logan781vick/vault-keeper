@@ -1,42 +1,17 @@
 import { useState } from "react";
-import { Plus, Table2, Clock, Globe, Lock, Trash2, GripVertical, ChevronDown } from "lucide-react";
-
-interface DatabaseEntry {
-  id: string;
-  name: string;
-  createdAt: string;
-  type: "personal" | "public";
-  fields: FieldDef[];
-  rows: Record<string, string>[];
-}
-
-interface FieldDef {
-  name: string;
-  type: "text" | "number" | "date" | "boolean" | "email";
-}
+import { Plus, Table2, Clock, Globe, Lock, Trash2, GripVertical, ChevronDown, Eye } from "lucide-react";
+import type { DatabaseEntry, FieldDef } from "@/pages/Index";
 
 const FIELD_TYPES = ["text", "number", "date", "boolean", "email"] as const;
 
-const TellerTwo = () => {
-  const [databases, setDatabases] = useState<DatabaseEntry[]>([
-    {
-      id: "1",
-      name: "Customer Records",
-      createdAt: new Date().toLocaleString(),
-      type: "personal",
-      fields: [
-        { name: "Name", type: "text" },
-        { name: "Email", type: "email" },
-        { name: "Revenue", type: "number" },
-      ],
-      rows: [
-        { Name: "John Doe", Email: "john@example.com", Revenue: "15000" },
-        { Name: "Jane Smith", Email: "jane@example.com", Revenue: "22000" },
-        { Name: "Bob Wilson", Email: "bob@example.com", Revenue: "8500" },
-      ],
-    },
-  ]);
-  const [selectedDb, setSelectedDb] = useState<string>("1");
+interface TellerTwoProps {
+  databases: DatabaseEntry[];
+  setDatabases: React.Dispatch<React.SetStateAction<DatabaseEntry[]>>;
+  onViewInTellerThree: (dbId: string) => void;
+}
+
+const TellerTwo = ({ databases, setDatabases, onViewInTellerThree }: TellerTwoProps) => {
+  const [selectedDb, setSelectedDb] = useState<string>(databases[0]?.id || "");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newDbName, setNewDbName] = useState("");
   const [newDbType, setNewDbType] = useState<"personal" | "public">("personal");
@@ -200,6 +175,12 @@ const TellerTwo = () => {
                 </span>
               </div>
               <div className="flex gap-2">
+                <button
+                  onClick={() => onViewInTellerThree(activeDb.id)}
+                  className="px-3 py-1.5 rounded-md text-[11px] bg-accent/10 text-accent hover:bg-accent/20 transition-colors flex items-center gap-1.5"
+                >
+                  <Eye className="w-3 h-3" /> View in Teller 3
+                </button>
                 <button onClick={addField} className="px-3 py-1.5 rounded-md text-[11px] bg-secondary hover:bg-secondary/80 text-foreground transition-colors">
                   + Field
                 </button>
